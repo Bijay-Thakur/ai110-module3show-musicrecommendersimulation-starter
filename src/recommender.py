@@ -100,9 +100,9 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
     Scores a single song against user preferences.
 
     Weights:
-      genre match     0.35  (binary)
+      genre match     0.175 (binary)
       mood match      0.30  (binary)
-      energy distance 0.25  (1 - |user_energy - song_energy|)
+      energy distance 0.50  (1 - |user_energy - song_energy|)
       acousticness    0.10  (boolean preference vs. threshold 0.6)
 
     Returns:
@@ -113,7 +113,7 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
 
     # Genre match
     if song["genre"] == user_prefs.get("genre"):
-        score += 0.35
+        score += 0.175
         reasons.append(f"Matches your favorite genre ({song['genre']})")
 
     # Mood match
@@ -124,7 +124,7 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
     # Energy similarity
     target_energy = user_prefs.get("energy", 0.5)
     energy_sim = 1.0 - abs(song["energy"] - target_energy)
-    score += 0.25 * energy_sim
+    score += 0.50 * energy_sim
     if energy_sim >= 0.85:
         reasons.append("Energy level closely matches your target")
     else:
