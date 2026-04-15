@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Music Recommender — Data Flow</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f4f4f4;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+    }
+    h1 { color: #333; margin-bottom: 0.25rem; }
+    p  { color: #666; margin-bottom: 2rem; }
+    .diagram-box {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      padding: 2rem 3rem;
+      max-width: 900px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h1>Music Recommender — Data Flow</h1>
+  <p>Input → Score Every Song → Ranked Output</p>
+  <div class="diagram-box">
+    <div class="mermaid">
+flowchart TD
+    A([Start]) --> B[Load user_prefs\ngenre · mood · energy · likes_acoustic]
+    A --> C[load_songs\ndata/songs.csv]
+    C --> D[(18 Song Dicts)]
+
+    B & D --> E[recommend_songs\nuser_prefs · songs · k=5]
+
+    E --> F{For each song\nin catalog}
+
+    F --> G[score_song\nuser_prefs · song]
+
+    G --> H[Genre match?\n+0.35]
+    G --> I[Mood match?\n+0.30]
+    G --> J[Energy distance\n+0.25 × 1−|Δenergy|]
+    G --> K[Acoustic pref?\n+0.10]
+
+    H & I & J & K --> L[score: float\nreasons: List of str]
+
+    L --> M[Append\nsong · score · explanation\nto scored list]
+    M --> F
+
+    F -- All 18 songs judged --> N[Sort scored\nby score descending]
+    N --> O[Slice top K]
+
+    O --> P[/Print results\nTitle · Score · Because.../]
+    P --> Q([End])
+    </div>
+  </div>
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: "default" });
+  </script>
+</body>
+</html>

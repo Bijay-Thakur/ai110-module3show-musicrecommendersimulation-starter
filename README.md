@@ -17,17 +17,41 @@ Replace this paragraph with your own summary of what your version does.
 
 ## How The System Works
 
-Explain your design in plain language.
+Real-world recommenders like Spotify or YouTube learn from massive amounts of behavioral data — skips, replays, playlist adds — to predict what a listener wants next without ever asking them directly. They also layer in collaborative filtering, meaning they surface songs that people with similar taste histories have enjoyed, even if those songs share no obvious features with what you just played. This version takes a simpler, fully transparent approach: instead of learning from behavior, it asks the user to describe their preferences directly (favorite genre, mood, energy level, and whether they prefer acoustic or electric sounds), then scores every song in the catalog using a weighted formula. Genre and mood carry the most weight because they represent the clearest categorical preferences — a lofi listener getting a rock track is a worse miss than a small energy mismatch. Energy similarity is scored continuously so that near-matches still get partial credit rather than being treated as complete misses. The result is a recommender that is easy to reason about and explain, at the cost of personalization depth: it cannot discover that you sometimes break your own patterns, and it treats every user with the same preference shape as equally served.
 
-Some prompts to answer:
+### Algorithm Recipe
 
-- What features does each `Song` use in your system
-  - For example: genre, mood, energy, tempo
-- What information does your `UserProfile` store
-- How does your `Recommender` compute a score for each song
-- How do you choose which songs to recommend
+The user provides a taste profile with four fields:
 
-You can include a simple diagram or bullet list if helpful.
+| Field | Type | Example |
+|---|---|---|
+| `genre` | string | `"jazz"` |
+| `mood` | string | `"relaxed"` |
+| `energy` | float 0–1 | `0.40` |
+| `likes_acoustic` | boolean | `True` |
+
+Every song in the catalog is then judged by the same four-step formula:
+
+```
+score = 0.0
+
+1. Genre match      if song.genre == user.genre       → +0.35
+2. Mood match       if song.mood  == user.mood         → +0.30
+3. Energy distance  +0.25 × (1 − |song.energy − user.energy|)
+4. Acoustic pref    if user.likes_acoustic matches     → +0.10
+                    song.acousticness > 0.6
+
+Maximum possible score: 1.00
+```
+
+After all songs are scored, they are sorted in descending order and the top K are returned alongside a plain-language explanation built from whichever conditions fired.
+
+### Potential Biases
+
+- **Genre over-dominance.** With a weight of 0.35, genre is the single largest factor. A song that perfectly matches every other preference — mood, energy, acousticness — can still score below a genre-matched song with nothing else in common. Great songs from adjacent genres (e.g., soul for a jazz user) will be systematically under-ranked.
+- **Mood is binary.** "Relaxed" and "chill" feel very similar, but the algorithm treats them as a complete miss. Any song tagged with a near-synonym of the user's preferred mood receives zero credit for that field.
+- **Catalog skew.** The dataset was hand-curated and does not represent all genres or cultures equally. Genres that happen to have more entries (lofi has three songs; reggae has one) give users of popular genres more good matches to choose from, while niche-genre users get fewer high-scoring options even if their profile is equally valid.
+- **Static profile.** The user profile never updates. If a listener's mood shifts mid-session, the recommendations do not adapt — the system will keep returning the same ranked list.
 
 ---
 
@@ -53,7 +77,7 @@ pip install -r requirements.txt
 ```bash
 python -m src.main
 ```
-
+![alt text]({2B1B667A-C780-49CD-9F55-1619A4289DBD}.png)
 ### Running Tests
 
 Run the starter tests with:
